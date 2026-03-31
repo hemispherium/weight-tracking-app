@@ -14,13 +14,13 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-            <div className={`w-full flex-1 p-6 pb-32 ${tab === 'calendar' ? 'max-w-4xl' : 'max-w-md'}`}>
+            <div className={`w-full flex-1 p-6 pb-32 ${tab === 'input' ? 'max-w-md' : 'max-w-4xl'}`}>
                 {tab === 'input'    && <InputPage />}
                 {tab === 'calendar' && <CalendarPage />}
                 {tab === 'graph'    && <GraphPage />}
             </div>
 
-            <nav className={`fixed bottom-8 w-full bg-white border border-gray-200 rounded-2xl shadow-lg mx-auto ${tab === 'calendar' ? 'max-w-4xl' : 'max-w-md'}`}>
+            <nav className={`fixed bottom-8 w-full bg-white border border-gray-200 rounded-2xl shadow-lg mx-auto ${tab === 'input' ? 'max-w-md' : 'max-w-4xl'}`}>
                 <div className="flex">
                     {TABS.map(({ key, label, icon }) => (
                         <button

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import EmojiPicker from 'emoji-picker-react';
 
@@ -68,6 +68,27 @@ export default function InputPage() {
     });
     const [showPicker, setShowPicker] = useState(false);
     const [message, setMessage] = useState(null);
+    const [isExisting, setIsExisting] = useState(false);
+
+    useEffect(() => {
+        setMessage(null);
+        axios.get('/api/weight-records', { params: { date: form.date } }).then((res) => {
+            const record = res.data.find((r) => r.date === form.date);
+            if (record) {
+                setForm({
+                    date: record.date,
+                    weight: record.weight ?? '',
+                    body_fat: record.body_fat ?? '',
+                    emoji: record.emoji ?? '',
+                    memo: record.memo ?? '',
+                });
+                setIsExisting(true);
+            } else {
+                setForm((prev) => ({ date: prev.date, weight: '', body_fat: '', emoji: '', memo: '' }));
+                setIsExisting(false);
+            }
+        });
+    }, [form.date]);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -77,7 +98,8 @@ export default function InputPage() {
         e.preventDefault();
         try {
             await axios.post('/api/weight-records', form);
-            setMessage({ type: 'success', text: '記録しました！' });
+            setMessage({ type: 'success', text: isExisting ? '更新しました！' : '記録しました！' });
+            setIsExisting(true);
         } catch (e) {
             const errors = e.response?.data?.errors;
             const text = errors
@@ -94,7 +116,7 @@ export default function InputPage() {
 
                 <DateNavigator
                     date={form.date}
-                    onChange={(date) => setForm({ ...form, date })}
+                    onChange={(date) => setForm((prev) => ({ ...prev, date }))}
                 />
 
                 <div>
@@ -193,7 +215,7 @@ export default function InputPage() {
                     type="submit"
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition"
                 >
-                    記録する
+                    {isExisting ? '更新する' : '記録する'}
                 </button>
 
                 {message && (
