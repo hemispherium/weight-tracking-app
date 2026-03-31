@@ -12,13 +12,15 @@ export default defineConfig({
         tailwindcss(),
         react(),
     ],
-    server: {
-        host: 'localhost',
-        hmr: {
+    ...(isProduction ? {} : {
+        server: {
             host: 'localhost',
-        },
-        watch: {
-            ignored: ['**/storage/framework/views/**'],
-        },
-    },
+            hmr: {
+                host: 'localhost',
+            },
+            watch: {
+                ignored: ['**/storage/framework/views/**'],
+            },
+        }
+    }),
 });
