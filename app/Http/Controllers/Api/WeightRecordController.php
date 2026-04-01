@@ -16,11 +16,12 @@ class WeightRecordController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'date'     => 'required|date',
-            'weight'   => 'required|numeric|min:0',
-            'body_fat' => 'nullable|numeric|min:0|max:100',
-            'emoji'    => 'nullable|string',
-            'memo'     => 'nullable|string',
+            'date'      => 'required|date',
+            'weight'    => 'required|numeric|min:0',
+            'body_fat'  => 'nullable|numeric|min:0|max:100',
+            'emoji'     => 'nullable|string',
+            'memo'      => 'nullable|string',
+            'image_url' => 'nullable|url',
         ]);
 
         $record = $request->user()->weightRecords()->updateOrCreate(
@@ -41,11 +42,12 @@ class WeightRecordController extends Controller
         $record = $request->user()->weightRecords()->findOrFail($id);
 
         $validated = $request->validate([
-            'date'     => 'sometimes|date',
-            'weight'   => 'sometimes|numeric|min:0',
-            'body_fat' => 'nullable|numeric|min:0|max:100',
-            'emoji'    => 'nullable|string',
-            'memo'     => 'nullable|string',
+            'date'      => 'sometimes|date',
+            'weight'    => 'sometimes|numeric|min:0',
+            'body_fat'  => 'nullable|numeric|min:0|max:100',
+            'emoji'     => 'nullable|string',
+            'memo'      => 'nullable|string',
+            'image_url' => 'nullable|url',
         ]);
 
         $record->update($validated);

@@ -69,9 +69,16 @@ export default function InputPage() {
     const [showPicker, setShowPicker] = useState(false);
     const [message, setMessage] = useState(null);
     const [isExisting, setIsExisting] = useState(false);
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [imageLabel, setImageLabel] = useState('');
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         setMessage(null);
+        setImageFile(null);
+        setImagePreview(null);
+        setImageLabel('');
         axios.get('/api/weight-records', { params: { date: form.date } }).then((res) => {
             const record = res.data.find((r) => r.date === form.date);
             if (record) {
@@ -81,10 +88,12 @@ export default function InputPage() {
                     body_fat: record.body_fat ?? '',
                     emoji: record.emoji ?? '',
                     memo: record.memo ?? '',
+                    image_url: record.image_url ?? '',
                 });
+                if (record.image_url) setImagePreview(record.image_url);
                 setIsExisting(true);
             } else {
-                setForm((prev) => ({ date: prev.date, weight: '', body_fat: '', emoji: '', memo: '' }));
+                setForm((prev) => ({ date: prev.date, weight: '', body_fat: '', emoji: '', memo: '', image_url: '' }));
                 setIsExisting(false);
             }
         });
@@ -94,18 +103,52 @@ export default function InputPage() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const uploadToCloudinary = async () => {
+        const { data: sig } = await axios.get('/api/cloudinary/signature', {
+            params: { date: form.date, weight: form.weight, label: imageLabel },
+        });
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        formData.append('api_key', sig.api_key);
+        formData.append('timestamp', sig.timestamp);
+        formData.append('signature', sig.signature);
+        formData.append('public_id', sig.public_id);
+
+        const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
+            { method: 'POST', body: formData }
+        );
+        const data = await res.json();
+        return data.secure_url;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setUploading(true);
         try {
-            await axios.post('/api/weight-records', form);
+            let image_url = form.image_url ?? '';
+            if (imageFile) {
+                image_url = await uploadToCloudinary();
+            }
+            await axios.post('/api/weight-records', { ...form, image_url });
             setMessage({ type: 'success', text: isExisting ? '更新しました！' : '記録しました！' });
             setIsExisting(true);
+            setImageFile(null);
         } catch (e) {
             const errors = e.response?.data?.errors;
             const text = errors
                 ? Object.values(errors).flat().join(' ')
                 : '保存に失敗しました';
             setMessage({ type: 'error', text });
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -211,11 +254,50 @@ export default function InputPage() {
                     />
                 </div>
 
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">画像</label>
+                    <label className="flex items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-400 transition">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="hidden"
+                        />
+                        {imagePreview ? (
+                            <img src={imagePreview} alt="preview" className="max-h-48 rounded-lg object-contain" />
+                        ) : (
+                            <span className="text-gray-400 text-sm">クリックして画像を選択</span>
+                        )}
+                    </label>
+                    {imageFile && (
+                        <div className="mt-2">
+                            <label className="block text-xs text-gray-500 mb-1">ラベル（任意）</label>
+                            <input
+                                type="text"
+                                value={imageLabel}
+                                onChange={(e) => setImageLabel(e.target.value)}
+                                placeholder="例: 朝食後"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            />
+                        </div>
+                    )}
+                    {imagePreview && (
+                        <button
+                            type="button"
+                            onClick={() => { setImageFile(null); setImagePreview(null); setImageLabel(''); setForm({ ...form, image_url: '' }); }}
+                            className="mt-1 text-xs text-red-400 hover:underline"
+                        >
+                            画像を削除
+                        </button>
+                    )}
+                </div>
+
                 <button
                     type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition"
+                    disabled={uploading}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
                 >
-                    {isExisting ? '更新する' : '記録する'}
+                    {uploading ? 'アップロード中...' : isExisting ? '更新する' : '記録する'}
                 </button>
 
                 {message && (

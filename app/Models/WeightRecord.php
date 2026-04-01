@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WeightRecord extends Model
 {
-    protected $fillable = ['user_id', 'date', 'weight', 'body_fat', 'emoji', 'memo'];
+    protected $fillable = ['user_id', 'date', 'weight', 'body_fat', 'emoji', 'memo', 'image_url'];
 
     public function user()
     {
