@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 
 class WeightRecordController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return WeightRecord::orderBy('date', 'desc')->get();
+        return $request->user()->weightRecords()->orderBy('date', 'desc')->get();
     }
 
     public function store(Request $request)
@@ -23,7 +23,7 @@ class WeightRecordController extends Controller
             'memo'     => 'nullable|string',
         ]);
 
-        $record = WeightRecord::updateOrCreate(
+        $record = $request->user()->weightRecords()->updateOrCreate(
             ['date' => $validated['date']],
             $validated
         );
@@ -31,14 +31,14 @@ class WeightRecordController extends Controller
         return response()->json($record, 201);
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        return WeightRecord::findOrFail($id);
+        return $request->user()->weightRecords()->findOrFail($id);
     }
 
     public function update(Request $request, string $id)
     {
-        $record = WeightRecord::findOrFail($id);
+        $record = $request->user()->weightRecords()->findOrFail($id);
 
         $validated = $request->validate([
             'date'     => 'sometimes|date',
@@ -53,9 +53,9 @@ class WeightRecordController extends Controller
         return response()->json($record);
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        WeightRecord::findOrFail($id)->delete();
+        $request->user()->weightRecords()->findOrFail($id)->delete();
 
         return response()->json(null, 204);
     }
